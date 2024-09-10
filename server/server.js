@@ -7,7 +7,7 @@ const connectDatabase = require('./dbConfig/databaseConfig');
 const colors = require('colors');
 const morgan = require('morgan');
 const cors = require('cors');
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 5050;
 const urlRouter = require('./routes/urlRoutes');
 
 
