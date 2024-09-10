@@ -35,7 +35,8 @@ const urlRedirector = async (req, res) => {
     const url = await Url.findOne({ urlCode: code });
 
     if (url) {
-      return res.redirect(url.originalUrl);
+      // return res.redirect(url.originalUrl);
+      return res.status(200).json({ data: url.originalUrl });
     } else {
       return res.status(404).json({ message: 'URL not found' });
     }
