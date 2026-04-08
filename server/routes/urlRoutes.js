@@ -1,8 +1,17 @@
 const router = require('express').Router();
-const {createShortUrl, urlRedirector} = require('../controllers/urlController')
+const {
+  createShortUrl,
+  redirectUrl,
+  getUrlStats,
+} = require('../controllers/urlController');
 
+// create Short URL
+router.post('/shorten', createShortUrl);
 
-router.post('/shorten' , createShortUrl)
-router.get('/:code' , urlRedirector);
+// analytics route
+router.get('/stats/:code', getUrlStats);
 
-module.exports  = router;
+// redirect (always last)
+router.get('/:code', redirectUrl);
+
+module.exports = router;

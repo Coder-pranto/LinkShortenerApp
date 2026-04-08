@@ -1,45 +1,96 @@
-const Url = require('../models/url.model');
-const { customAlphabet } = require('nanoid');
-const nanoid = customAlphabet('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
-const { ensureProtocol } = require('../utils/helper');
+const Url = require('../models/urlModel');
+const { ensureProtocol, isValidUrl, nanoid } = require('../utils/helper');
 
-//* Create short URL 
+// Create Short URL
 const createShortUrl = async (req, res) => {
-  let { originalUrl } = req.body; 
-  const baseUrl = process.env.BASE_URL;
 
-  if (!originalUrl) {
-    return res.status(400).json({ message: 'Invalid URL' });
-  }
+    let { originalUrl } = req.body;
+    const baseUrl = process.env.BASE_URL;
 
-  const processedUrl = ensureProtocol(originalUrl);  
+    if (!originalUrl) {
+      return res.status(400).json({ message: 'URL is required' });
+    }
 
-  const existingUrl = await Url.findOne({ originalUrl: processedUrl });
+    const processedUrl = ensureProtocol(originalUrl);
 
-  if (existingUrl) {
-    return res.status(200).json({ data: existingUrl.shortUrl });
-  }
+    if (!isValidUrl(processedUrl)) {
+      return res.status(400).json({ message: 'Invalid URL format' });
+    }
 
-  const urlCode = nanoid();
-  const shortUrl = `${baseUrl}/${urlCode}`;
+    const existing = await Url.findOne({ originalUrl: processedUrl });
 
-  const newUrl = new Url({ originalUrl: processedUrl, shortUrl, urlCode });
-  await newUrl.save();
+    if (existing) {
+      return res.status(200).json({
+        message: 'Already exists',
+        data: existing.shortUrl,
+      });
+    }
 
-  return res.status(201).json({ message: 'URL created', data: newUrl.shortUrl });
+    // collision-safe nanoid
+    let urlCode;
+    let exists = true;
+
+    while (exists) {
+      urlCode = nanoid();
+      exists = await Url.findOne({ urlCode });
+    }
+
+    const shortUrl = `${baseUrl}/${urlCode}`;
+
+    const newUrl = await Url.create({
+      originalUrl: processedUrl,
+      shortUrl,
+      urlCode,
+    });
+
+    return res.status(201).json({
+      message: 'Short URL created',
+      data: {
+        shortUrl: newUrl.shortUrl,
+        urlCode: newUrl.urlCode,
+      },
+    });
+  
 };
 
-//* Redirect to original URL
-const urlRedirector = async (req, res) => {
+// Redirect + Click Tracking
+const redirectUrl = async (req, res) => {
     const { code } = req.params;
+
     const url = await Url.findOne({ urlCode: code });
 
-    if (url) {
-      // return res.redirect(url.originalUrl);
-      return res.status(200).json({ data: url.originalUrl });
-    } else {
+    if (!url) {
       return res.status(404).json({ message: 'URL not found' });
     }
+
+    // click count update
+    url.clicks += 1;
+    await url.save();
+
+    return res.redirect(url.originalUrl);
+
 };
 
-module.exports = { createShortUrl, urlRedirector };
+// Get Analytics
+const getUrlStats = async (req, res) => {
+    const { code } = req.params;
+
+    const url = await Url.findOne({ urlCode: code });
+
+    if (!url) {
+      return res.status(404).json({ message: 'URL not found' });
+    }
+
+    return res.json({
+      originalUrl: url.originalUrl,
+      shortUrl: url.shortUrl,
+      clicks: url.clicks,
+      createdAt: url.createdAt,
+    });
+};
+
+module.exports = {
+  createShortUrl,
+  redirectUrl,
+  getUrlStats,
+};

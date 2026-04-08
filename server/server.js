@@ -1,46 +1,74 @@
+// -----------------------------
+// Required Packages
+// -----------------------------
 require('express-async-errors');
 require('dotenv').config();
-const express = require('express');
-const app = express()
-const connectDatabase = require('./dbConfig/databaseConfig');
+require('colors');
 
-const colors = require('colors');
+const express = require('express');
+const app = express();
+
+const connectDatabase = require('./dbConfig/databaseConfig');
 const morgan = require('morgan');
 const cors = require('cors');
-const port = process.env.PORT || 5050;
+
+// -----------------------------
+// Configurations
+// -----------------------------
+const PORT = process.env.PORT || 5000;
+const dbUrl = process.env.MONGO_URI || 'mongodb://localhost:27017/link-shortening';
+
+// -----------------------------
+// Routers
+// -----------------------------
 const urlRouter = require('./routes/urlRoutes');
 
-
+// -----------------------------
+// Middlewares
+// -----------------------------
 app.use(cors());
-app.use(morgan('tiny'));
-app.use(express.urlencoded({extended:true}));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// -----------------------------
+// Routes
+// -----------------------------
 app.use(urlRouter);
 
-//* default
+// Default Route
+app.get('/', (req, res) => {
+  res.send('Hello from Link Shortening server.... :)');
+});
 
-app.get('/',(req, res)=>{
-  res.send('hello from Link Shortening server.... :)');
-})
+// -----------------------------
+// Error Handling
+// -----------------------------
 
+// 404 Not Found
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Route not found!' });
+});
 
+// Server Error
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something is broke!' });
+});
 
-//* handling error route
+// -----------------------------
+// Server Initialization
+// -----------------------------
 
-app.use((req, res, next)=>{
-    res.status(404).json({message : "route not found !"});
-})
-
-
-//* handling sever side error
-
-app.use((err, req, res, next)=>{
-    console.error(err.stack);
-    res.status(500).json({message: "Some thing is broke!"})
-})
-
-app.listen(port, ()=>{
-    console.log(`>Server is up and running on : http://localhost:${port} `.green.bgWhite);
-    connectDatabase();
-})
+(async () => {
+  try {
+    await connectDatabase(dbUrl);
+    app.listen(PORT, () => {
+      console.log(`Server running on port: ${PORT}`.rainbow.bgWhite.bold);
+    });
+  } catch (error) {
+    console.error('Failed to connect to the database', error);
+  }
+})();
