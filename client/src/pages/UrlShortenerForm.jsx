@@ -14,13 +14,13 @@ const UrlShortenerForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!originalUrl) return;
-
     try {
       const { data } = await createShortUrl(originalUrl);
-      setShortenedUrl(data.data);
+      const shortUrl = data.data.shortUrl;
+      setShortenedUrl(shortUrl);
       setCopied(false);
       // ✅ QR generate
-      const qr = await QRCodeGenerator.toDataURL(data.data);
+      const qr = await QRCodeGenerator.toDataURL(shortUrl);
       setQrImage(qr);
       toast.success('Short URL created successfully!');
     } catch (error) {
