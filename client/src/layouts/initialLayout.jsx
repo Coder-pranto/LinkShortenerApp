@@ -1,47 +1,46 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import ButtonSection from '../components/ButtonSection';
-import { TbArrowBackUp } from "react-icons/tb";
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import LinkAction from '../components/LinkAction';
+import { TbArrowBackUp } from 'react-icons/tb';
 import Footer from '../components/Footer';
+import Navbar from '../components/Navbar';
+
 const InitialLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const isHome = location.pathname === '/';
 
-  const handleBack = () => {
-    navigate(-1); 
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 flex flex-col justify-between">
-      <header className="bg-blue-600 text-white py-4">
-        <div className="container mx-auto flex justify-between items-center px-4">
-          <nav>
-            <Link to="/" className="text-white hover:text-gray-200">
-              <h1 className="text-3xl font-bold">Link Shortener App</h1>
-            </Link>
-          </nav>
-        </div>
-      </header>
-     
-      <main className="container mx-auto px-4 py-8">
-        {isHome && <ButtonSection />}
+    <div className='min-h-screen flex flex-col bg-gray-100 text-gray-900'>
+      {/* Navbar */}
+      <Navbar />
+
+      {/* Main Content */}
+      <main className='flex-grow w-full max-w-6xl mx-auto px-4 py-8 flex flex-col justify-center'>
+        {/* Home Section */}
+        {isHome && <LinkAction />}
+
+        {/* Back Button */}
         {!isHome && (
-          <div>
+          <div className='mb-6'>
             <button
-              onClick={handleBack}
-              className="flex items-center bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition duration-200"
+              onClick={() => navigate(-1)}
+              className='flex items-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded-lg shadow-sm hover:bg-gray-100 transition'
             >
-              <TbArrowBackUp /> Back
+              <TbArrowBackUp className='text-lg' />
+              Back
             </button>
           </div>
         )}
+
+        {/* ✅ FIXED: No forced styling here */}
         <Outlet />
       </main>
-        <Footer/>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
 
 export default InitialLayout;
-

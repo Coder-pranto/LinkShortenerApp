@@ -7,6 +7,7 @@ require('colors');
 
 const express = require('express');
 const app = express();
+const path = require('path');
 
 const connectDatabase = require('./dbConfig/databaseConfig');
 const morgan = require('morgan');
@@ -26,7 +27,18 @@ const urlRouter = require('./routes/urlRoutes');
 // -----------------------------
 // Middlewares
 // -----------------------------
-app.use(cors());
+
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? 'https://linkshortener.onrender.com'
+        :  process.env.CLIENT_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  }),
+);
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
@@ -42,6 +54,17 @@ app.use(urlRouter);
 app.get('/', (req, res) => {
   res.send('Hello from Link Shortening server.... :)');
 });
+
+
+
+// PRODUCTION SETUP
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+
+  app.get(/.*/, (_, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 // -----------------------------
 // Error Handling
