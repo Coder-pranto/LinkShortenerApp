@@ -2,55 +2,57 @@ const Url = require('../models/urlModel');
 const { ensureProtocol, isValidUrl, nanoid } = require('../utils/helper');
 
 // Create Short URL
+
 const createShortUrl = async (req, res) => {
+  let { originalUrl } = req.body;
+  const baseUrl = process.env.BASE_URL;
 
-    let { originalUrl } = req.body;
-    const baseUrl = process.env.BASE_URL;
+  if (!originalUrl) {
+    return res.status(400).json({ message: 'URL is required' });
+  }
 
-    if (!originalUrl) {
-      return res.status(400).json({ message: 'URL is required' });
-    }
+  const processedUrl = ensureProtocol(originalUrl);
 
-    const processedUrl = ensureProtocol(originalUrl);
+  if (!isValidUrl(processedUrl)) {
+    return res.status(400).json({ message: 'Invalid URL format' });
+  }
 
-    if (!isValidUrl(processedUrl)) {
-      return res.status(400).json({ message: 'Invalid URL format' });
-    }
+  const existing = await Url.findOne({ originalUrl: processedUrl });
 
-    const existing = await Url.findOne({ originalUrl: processedUrl });
-
-    if (existing) {
-      return res.status(200).json({
-        message: 'Already exists',
-        data: existing.shortUrl,
-      });
-    }
-
-    // collision-safe nanoid
-    let urlCode;
-    let exists = true;
-
-    while (exists) {
-      urlCode = nanoid();
-      exists = await Url.findOne({ urlCode });
-    }
-
-    const shortUrl = `${baseUrl}/${urlCode}`;
-
-    const newUrl = await Url.create({
-      originalUrl: processedUrl,
-      shortUrl,
-      urlCode,
-    });
-
-    return res.status(201).json({
-      message: 'Short URL created',
+  if (existing) {
+    return res.status(200).json({
+      message: 'Already exists',
       data: {
-        shortUrl: newUrl.shortUrl,
-        urlCode: newUrl.urlCode,
+        shortUrl: existing.shortUrl,
+        urlCode: existing.urlCode,
       },
     });
-  
+  }
+
+  // collision-safe nanoid
+  let urlCode;
+  let exists = true;
+
+  while (exists) {
+    urlCode = nanoid();
+    exists = await Url.findOne({ urlCode });
+  }
+
+  const shortUrl = `${baseUrl}/${urlCode}`;
+
+  const newUrl = await Url.create({
+    originalUrl: processedUrl,
+    shortUrl,
+    urlCode,
+  });
+
+  return res.status(201).json({
+    message: 'Short URL created',
+    data: {
+      shortUrl: newUrl.shortUrl,
+      urlCode: newUrl.urlCode,
+    },
+  });
 };
 
 // Redirect + Click Tracking
