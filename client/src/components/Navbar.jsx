@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import logo from '../assets/logo.png';
 
 const Navbar = () => {
   return (
@@ -6,7 +7,7 @@ const Navbar = () => {
       <div className='max-w-6xl mx-auto px-6 py-4 flex items-center justify-between'>
         <Link to='/' className='flex items-center gap-3 group'>
           <img
-            src='/logo.png'
+            src={logo}
             alt='Logo'
             className='w-14 h-14 object-contain drop-shadow-md bg-emerald-50 rounded-full' 
           />
