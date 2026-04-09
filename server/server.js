@@ -50,12 +50,6 @@ app.use(express.json());
 // -----------------------------
 app.use(urlRouter);
 
-// Default Route
-app.get('/', (req, res) => {
-  res.send('Hello from Link Shortening server.... :)');
-});
-
-
 // PRODUCTION SETUP
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
